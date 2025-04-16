@@ -102,18 +102,6 @@ def translate_folder(folder_path):
 #                    print('Translated: {}'.format(file_path))
 
         # 遍歷資料夾內所有檔案和子資料夾，檢查是否有壓縮檔案
-                    translate_file(file_path)
-                    # 記錄翻譯完成的檔案路徑
-                    process_logger.info('Translated: {}'.format(file_path))
-#                    print('Translated: {}'.format(file_path))
-
-        # 遍歷資料夾內所有檔案和子資料夾，檢查是否有壓縮檔案
-                    translate_file(file_path)
-                    # 記錄翻譯完成的檔案路徑
-                    process_logger.info('Translated: {}'.format(file_path))
-#                    print('Translated: {}'.format(file_path))
-
-        # 遍歷資料夾內所有檔案和子資料夾，檢查是否有壓縮檔案
         for root, dirs, files in os.walk(folder_path):
             for file in files:
                 file_path = os.path.join(root, file)
