@@ -55,7 +55,7 @@ def translate_file(file_path):
         content = f.read()
     
     # 找到所有需要翻譯的內容
-    translate_logger.info(f'translate before: {text}')
+    translate_logger.info(f'translate before: {content}')
     translated_text = translate_text(content)
     translate_logger.info(f'translate after: {translated_text}')
     content = translated_text
@@ -72,7 +72,7 @@ def translate_folder(folder_path):
                 file_path = os.path.join(root, file)
                 ext = os.path.splitext(file_path)[1].lower()
 
-                if ext == '.txt':
+                if ext == '.txt' or '.ass' or '.srt':
                     # 翻譯純文字檔案
 #                    print('Translating file: {}'.format(file_path))
                     process_logger.info('Translating file: {}'.format(file_path))
