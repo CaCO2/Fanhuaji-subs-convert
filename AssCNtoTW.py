@@ -5,13 +5,19 @@ import shutil
 import requests
 import logging
 from functools import lru_cache
-    
+from requests.adapters import HTTPAdapter, Retry    
     
 # 設定欲翻譯的資料
 FOLDER_PATH = (r'/home/pi/Downloads/For_translation')
 
 session = requests.Session()
 header = {"Content-type": "application/json", "Accept": "application/json"}
+retries = Retry(
+    total=3,  # Retry up to 3 times
+    backoff_factor=5,  # Wait between retries
+    status_forcelist=[500, 502, 503, 504],  # Retry on these HTTP errors
+)
+session.mount("https://", HTTPAdapter(max_retries=retries))
 
 # 設置 translate_logger 和 process_logger
 translate_logger = logging.getLogger('translate')
@@ -45,11 +51,16 @@ def translate_text(text):
     """
     url = "https://api.zhconvert.org/convert"
     params = {"converter": "Taiwan", "text": text}
-    response = session.get(url, headers=header, params=params)
-    if response.status_code == 200:
+    try:
+        response = session.get(url, headers=header, params=params, timeout=5)  # Set timeout
+        response.raise_for_status()  # Raise error for bad responses (4xx, 5xx)
         return response.json()["data"]["text"]
-    else:
-        return ""
+    except requests.exceptions.RemoteDisconnected:
+        print("RemoteDisconnected error occurred. Retrying...")
+        return translate_text(text)  # Retry the request
+    except requests.exceptions.RequestException as e:
+        print(f"Error: {e}. Retrying...")
+        return ""  # Return empty string if all retries fail
 
 def translate_file(file_path):
     # 讀取檔案內容
@@ -85,6 +96,18 @@ def translate_folder(folder_path):
                     # 翻譯ass檔案
 #                    print('Translating file: {}'.format(file_path))
                     process_logger.info('Translating file: {}'.format(file_path))
+                    translate_file(file_path)
+                    # 記錄翻譯完成的檔案路徑
+                    process_logger.info('Translated: {}'.format(file_path))
+#                    print('Translated: {}'.format(file_path))
+
+        # 遍歷資料夾內所有檔案和子資料夾，檢查是否有壓縮檔案
+                    translate_file(file_path)
+                    # 記錄翻譯完成的檔案路徑
+                    process_logger.info('Translated: {}'.format(file_path))
+#                    print('Translated: {}'.format(file_path))
+
+        # 遍歷資料夾內所有檔案和子資料夾，檢查是否有壓縮檔案
                     translate_file(file_path)
                     # 記錄翻譯完成的檔案路徑
                     process_logger.info('Translated: {}'.format(file_path))
@@ -128,7 +151,6 @@ def translate_folder(folder_path):
                                     zip_ref.write(file_path_new, os.path.relpath(file_path_new, folder_path_new))
 
                         shutil.rmtree(folder_path_new)
-
                         # 記錄壓縮完成的檔案路徑
 #                        print('Recompressed: {}'.format(os.path.join(root, file)))
                         process_logger.info('Recompressed: {}'.format(os.path.join(root, file)))
@@ -139,4 +161,3 @@ def translate_folder(folder_path):
 
 if __name__ == "__main__":
     translate_folder(FOLDER_PATH)
-    
