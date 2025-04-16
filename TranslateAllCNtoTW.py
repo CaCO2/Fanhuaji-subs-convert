@@ -13,17 +13,17 @@ FOLDER_PATH = (r'C:\Users\user\Desktop\example_folder')
 session = requests.Session()
 header = {"Content-type": "application/json", "Accept": "application/json"}
 
-# 设置 translate_logger 和 process_logger
+# 設置 translate_logger 和 process_logger
 translate_logger = logging.getLogger('translate')
 translate_logger.setLevel(logging.INFO)
 process_logger = logging.getLogger('process')
 process_logger.setLevel(logging.INFO)
 
-# 创建 file handlers
+# 創建 file handlers
 translate_handler = logging.FileHandler(FOLDER_PATH+r'\\translate.log', mode='w', encoding='utf-8')
 process_handler = logging.FileHandler(FOLDER_PATH+r'\\process.log', mode='w', encoding='utf-8')
 
-# 设置日志格式
+# 設置日誌格式
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 translate_handler.setFormatter(formatter)
 process_handler.setFormatter(formatter)
@@ -56,7 +56,7 @@ def translate_file(file_path):
     
     # 找到所有需要翻譯的內容
     translate_logger.info(f'translate before: {text}')
-    translated_text = translate_text(text)
+    translated_text = translate_text(content)
     translate_logger.info(f'translate after: {translated_text}')
     content = translated_text
     

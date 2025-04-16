@@ -7,23 +7,25 @@ import logging
 from functools import lru_cache
     
     
-# 設定欲翻譯的資料夾位置
-FOLDER_PATH = (r'C:\Users\user\Desktop\example_folder')
-    
+# 設定欲翻譯的資料
+FOLDER_PATH = (r'/home/pi/Downloads/For_translation')
+
 session = requests.Session()
 header = {"Content-type": "application/json", "Accept": "application/json"}
 
-# 设置 translate_logger 和 process_logger
+# 設置 translate_logger 和 process_logger
 translate_logger = logging.getLogger('translate')
 translate_logger.setLevel(logging.INFO)
 process_logger = logging.getLogger('process')
 process_logger.setLevel(logging.INFO)
 
-# 创建 file handlers
-translate_handler = logging.FileHandler(FOLDER_PATH+r'\\translate.log', mode='w', encoding='utf-8')
-process_handler = logging.FileHandler(FOLDER_PATH+r'\\process.log', mode='w', encoding='utf-8')
+print(os.path.abspath(FOLDER_PATH))
+      
+# 創建 file handlers
+translate_handler = logging.FileHandler(FOLDER_PATH+r'/translate.log', mode='w', encoding='utf-8')
+process_handler = logging.FileHandler(FOLDER_PATH+r'/process.log', mode='w', encoding='utf-8')
 
-# 设置日志格式
+# 設置日誌格式
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 translate_handler.setFormatter(formatter)
 process_handler.setFormatter(formatter)
@@ -36,7 +38,7 @@ translate_logger.addHandler(console)
 process_logger.addHandler(process_handler)
 process_logger.addHandler(console)
 
-@lru_cache(maxsize=512)  # 設置緩存的最大大小為無限制
+@lru_cache(maxsize=512) # 設置緩存大小(無限制)
 def translate_text(text):
     """
     利用 zhconvert 的 API 翻譯中文文本
@@ -55,19 +57,18 @@ def translate_file(file_path):
         content = f.read()
     
     # 找到所有需要翻譯的內容
-    pattern = r'=(.*)'  # 匹配=號後的所有文字
+    pattern = r',,(.*)'  # 匹配,,號後的所有文字
     match_iter = re.finditer(pattern, content)
     
     # 翻譯每個匹配到的內容
     for match in match_iter:
         text = match.group(1)
-#        print(f'translate before: {text}')
-        translate_logger.info(f'translate before: {text}')
         translated_text = translate_text(text)
-#        print(f'translate after: {translated_text}')
-        translate_logger.info(f'translate after: {translated_text}')
-        content = content.replace(match.group(), '=' + translated_text)
-    
+        if text != translated_text:                  
+            translate_logger.info(f'translate before: {text}')
+            translate_logger.info(f'translate after: {translated_text}')
+            if translated_text !='':
+                content = content.replace(match.group(), ',,' + translated_text)
     # 將翻譯後的內容寫回到原檔案
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(content)
@@ -80,8 +81,8 @@ def translate_folder(folder_path):
                 file_path = os.path.join(root, file)
                 ext = os.path.splitext(file_path)[1].lower()
 
-                if ext == '.txt':
-                    # 翻譯純文字檔案
+                if ext == '.ass':
+                    # 翻譯ass檔案
 #                    print('Translating file: {}'.format(file_path))
                     process_logger.info('Translating file: {}'.format(file_path))
                     translate_file(file_path)
