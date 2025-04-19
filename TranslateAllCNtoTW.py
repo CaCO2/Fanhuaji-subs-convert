@@ -5,13 +5,19 @@ import shutil
 import requests
 import logging
 from functools import lru_cache
-    
+from requests.adapters import HTTPAdapter, Retry
     
 # 設定欲翻譯的資料夾位置
-FOLDER_PATH = (r'C:\Users\user\Desktop\example_folder')
+FOLDER_PATH = (r'/home/pi/Downloads/For_translation')
     
 session = requests.Session()
 header = {"Content-type": "application/json", "Accept": "application/json"}
+retries = Retry(
+        total=3,  # Retry up to 3 times
+        backoff_factor=5,  # Wait between retries
+        status_forcelist=[500, 502, 503, 504],  # Retry on these HTTP errors
+)
+session.mount("https://", HTTPAdapter(max_retries=retries))
 
 # 設置 translate_logger 和 process_logger
 translate_logger = logging.getLogger('translate')
@@ -20,8 +26,8 @@ process_logger = logging.getLogger('process')
 process_logger.setLevel(logging.INFO)
 
 # 創建 file handlers
-translate_handler = logging.FileHandler(FOLDER_PATH+r'\\translate.log', mode='w', encoding='utf-8')
-process_handler = logging.FileHandler(FOLDER_PATH+r'\\process.log', mode='w', encoding='utf-8')
+translate_handler = logging.FileHandler(FOLDER_PATH+r'/translate.log', mode='w', encoding='utf-8')
+process_handler = logging.FileHandler(FOLDER_PATH+r'/process.log', mode='w', encoding='utf-8')
 
 # 設置日誌格式
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
@@ -43,11 +49,16 @@ def translate_text(text):
     """
     url = "https://api.zhconvert.org/convert"
     params = {"converter": "Taiwan", "text": text}
-    response = session.get(url, headers=header, params=params)
-    if response.status_code == 200:
+    try:
+        response = session.get(url, headers=header, params=params, timeout=5)  # Set timeout
+        response.raise_for_status()  # Raise error for bad responses (4xx, 5xx)
         return response.json()["data"]["text"]
-    else:
-        return ""
+    except requests.exceptions.ConnectionError:
+        print("Connection error occurred. Retrying...")
+        return translate_text(text)  # Retry the request
+    except requests.exceptions.RequestException as e:
+        print(f"Error: {e}. Retrying...")
+        return ""  # Return empty string if all retries fail
 
 def translate_file(file_path):
     # 讀取檔案內容

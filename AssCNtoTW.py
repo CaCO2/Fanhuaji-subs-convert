@@ -55,8 +55,8 @@ def translate_text(text):
         response = session.get(url, headers=header, params=params, timeout=5)  # Set timeout
         response.raise_for_status()  # Raise error for bad responses (4xx, 5xx)
         return response.json()["data"]["text"]
-    except requests.exceptions.RemoteDisconnected:
-        print("RemoteDisconnected error occurred. Retrying...")
+    except requests.exceptions.ConnectionError:
+        print("Connection error occurred. Retrying...")
         return translate_text(text)  # Retry the request
     except requests.exceptions.RequestException as e:
         print(f"Error: {e}. Retrying...")
