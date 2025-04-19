@@ -69,7 +69,8 @@ def translate_file(file_path):
     translate_logger.info(f'translate before: {content}')
     translated_text = translate_text(content)
     translate_logger.info(f'translate after: {translated_text}')
-    content = translated_text
+    if trnaslated_text != "":
+        content = translated_text
     
     # 將翻譯後的內容寫回到原檔案
     with open(file_path, 'w', encoding='utf-8') as f:
